@@ -2,7 +2,7 @@ from opencc import OpenCC
 import json
 import multiprocessing
 import tqdm
-
+import random
 
 def to_traditional(text):
     cc = OpenCC('s2tw')
@@ -19,7 +19,7 @@ def clean_text(text):
     return text
 
 
-def clean_file(i, filename, instruction="This is modern Chinese text, translate it to wenyanwen."):
+def clean_file(i, filename, instruction="這是現代中文，請將其翻譯成文言文。"):
     with open(filename, 'r', encoding='utf-8') as f:
         data = json.load(f)
     to_process = []
@@ -40,6 +40,7 @@ def clean_file(i, filename, instruction="This is modern Chinese text, translate 
 def main():
     file_list = ['lunyu/part1.json', 'shiji/part1.json',
                  'shiji/part2.json', 'zhongyong/part1.json', 'zhongyong/part2.json']
+    test_ratio = 0.1
     num_processes = len(file_list)
     with multiprocessing.Pool(processes=num_processes) as p:
         clean_lists = p.starmap(
@@ -47,8 +48,11 @@ def main():
     clean_list = []
     for cl in clean_lists:
         clean_list += cl
+    random.shuffle(clean_list)
     with open('clean.json', 'w', encoding='utf-8') as f:
-        json.dump(clean_list, f, ensure_ascii=False, indent=4)
+        json.dump(clean_list[:int(len(clean_list) * (1 - test_ratio))], f, ensure_ascii=False, indent=2)
+    with open('test.json', 'w', encoding='utf-8') as f:
+        json.dump(clean_list[int(len(clean_list) * (1 - test_ratio)):], f, ensure_ascii=False, indent=2)
 
 
 if __name__ == "__main__":
